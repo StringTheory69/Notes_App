@@ -14,7 +14,7 @@ extension UIColor {
     static let notesBackground = UIColor(netHex: 0x1D1E1F)
     static let notesCellBackground = UIColor(netHex: 0x242526)
     static let notesCellBorder = UIColor(netHex: 0x727374)
-    static let notesRed = UIColor(netHex: 0x6B0C28)
+    static let notesRed = UIColor(netHex: 0xFE3B30)
     static let notesBlack = UIColor(netHex: 0x141415).withAlphaComponent(0.9)
 
     convenience init(red: Int, green: Int, blue: Int) {

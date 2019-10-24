@@ -183,10 +183,10 @@ extension NotesMainViewController {
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             let note = fetchedResultsController.object(at: indexPath)
-            delete(note)
+            deleteAction(note)
         }
     }
-    
+        
     @objc func deleteAction(_ note: Note) {
         container.viewContext.delete(note)
         saveContext()

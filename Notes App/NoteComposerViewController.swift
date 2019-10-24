@@ -24,6 +24,8 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
     lazy var circleButton: CircleButton = {
         let circleButton = CircleButton()
         circleButton.addTarget(self, action: #selector(deleteAction), for: .touchUpInside)
+        circleButton.backgroundColor = UIColor.notesRed
+        circleButton.setImage(#imageLiteral(resourceName: "x_icon"), for: .normal)
         circleButton.translatesAutoresizingMaskIntoConstraints = false
         return circleButton
     }()
