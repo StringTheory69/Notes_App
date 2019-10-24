@@ -12,7 +12,6 @@ class NotesNavigationController: UINavigationController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
         navigationBar.barTintColor = UIColor.notesBackground
         navigationBar.isTranslucent = false
         navigationBar.tintColor = .white

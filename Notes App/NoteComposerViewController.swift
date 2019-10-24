@@ -11,10 +11,9 @@ import UIKit
 class NoteComposerViewController: UIViewController, UITextViewDelegate {
     
     var note: Note!
-    // should this be weak
-    weak var delegate: NotesMainViewController!
     
-    var date: Date!
+    // ? weak
+    weak var delegate: NotesMainViewController!
     
     lazy var bottomConstraint: NSLayoutConstraint = {
         let bottomConstraint = noteComposerView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
@@ -30,23 +29,11 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
         return circleButton
     }()
 
-
     lazy var noteComposerView : NoteComposerView = {
         let noteComposerView = NoteComposerView()
-        noteComposerView.isScrollEnabled = true
         noteComposerView.translatesAutoresizingMaskIntoConstraints = false
         return noteComposerView
     }()
-    
-//    init(note:Note, delegate: NotesMainViewController) {
-//        super.init(nibName: nil, bundle: nil)
-//        self.delegate = delegate
-//        self.note = note
-//    }
-    
-//    required init?(coder aDecoder: NSCoder) {
-//        super.init(coder: aDecoder)
-//    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,32 +48,36 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         
         noteComposerView.text = self.note.body
-//        self.date = Date()
+        
         navigationItem.title = self.note.dateString
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(hideKeyboard))
+        rightButtonHide(true)
+        
         view.addSubview(circleButton)
+        
         setupLayout()
+    
     }
     
     @objc func deleteAction() {
-
-        CATransaction.begin()
-
+        
+        delegate.deleteAction(note)
+        delegate.blankNoteActive = false
         navigationController?.popViewController(animated: true)
-        CATransaction.setCompletionBlock({ [weak self] in
-            
-            // TODO Deal with force unwrap
-            self?.delegate.deleteAction(self!.note)
-        })
-        CATransaction.commit()
+
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        
+        guard noteComposerView.text != "" else {return deleteAction()}
+
+        // if some text has been added
+        delegate.blankNoteActive = false
         note.body = noteComposerView.text
         delegate.saveContext()
         delegate.loadSavedData()
-        print(" here save")
+
     }
     
     private func setupLayout() {
@@ -116,11 +107,29 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
         }
     }
     
+    func rightButtonHide(_ hide: Bool) {
+        
+        if let button = self.navigationItem.rightBarButtonItem {
+            
+            if hide {
+                button.isEnabled = false
+                button.tintColor = UIColor.clear
+            } else {
+                button.isEnabled = true
+                button.tintColor = UIColor.white
+            }
+
+        }
+    }
+    
     @objc func hideKeyboard() {
+        rightButtonHide(true)
         noteComposerView.resignFirstResponder()
     }
     
     @objc fileprivate func keyboardWillShow(notification: Notification) {
+        
+        rightButtonHide(false)
         if let keyboardFrame: NSValue = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
             let keyboardRectangle = keyboardFrame.cgRectValue
             let keyboardHeight = keyboardRectangle.height
@@ -151,6 +160,7 @@ class NoteComposerView: UITextView {
     }
     
     private func setupView() {
+        isScrollEnabled = true
         backgroundColor = .clear
         textColor = .white
         font = UIFont.cellBody

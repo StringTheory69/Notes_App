@@ -15,6 +15,8 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
     var container: NSPersistentContainer!
     var predicate: NSPredicate?
     
+    var blankNoteActive = false
+    
     lazy var heading: HeadingLabel = HeadingLabel()
     
     lazy var circleButton: CircleButton = {
@@ -25,24 +27,19 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
     }()
     
     @objc func presentBlankNote() {
-        print("PRESENt BLANK NOte")
+
         let note = Note(context: self.container.viewContext)
         note.date = Date()
         note.body = ""
+        blankNoteActive = true
         presentNotesComposer(note)
     }
-    
-//    lazy var noteComposerViewController = NoteComposerViewController()
-//    var dataManager: DataManager!
  
     override func viewDidLoad() {
         super.viewDidLoad()
-//        dataManager = DataManager(self)
-//        dataManager.importData()
+
         container = NSPersistentContainer(name: "NoteContainer")
         
-        // loads the saved database if it exists, or creates it otherwise
-        // if object in memory object with unique constraint matches new object - in memory trumps new
         container.loadPersistentStores { storeDescription, error in
             self.container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
             
@@ -51,17 +48,11 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
             }
         }
         
-        performSelector(inBackground: #selector(fetchCommits), with: nil)
-        
         loadSavedData()
-        
+
         setupView()
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        print("View did appear")
-    }
     
     private func setupView() {
         
@@ -88,30 +79,6 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
         navigationController?.pushViewController(vc, animated: true)
     }
     
-//    override func numberOfSections(in tableView: UITableView) -> Int {
-//
-//        return 1
-//    }
-//
-//    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        return dataManager.notes.count
-//    }
-//
-//
-//    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        let cell = tableView.dequeueReusableCell(withIdentifier: "notesCell", for: indexPath) as! NotesCell
-//
-//        cell.cellView.titleView.text = dataManager.notes[indexPath.row].truncatedTitle
-//        cell.cellView.dateView.text = dataManager.notes[indexPath.row].dateString
-//        cell.cellView.bodyView.text = dataManager.notes[indexPath.row].truncatedBody
-//
-//        return cell
-//    }
-//
-//    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-////        presentNotesComposer(dataManager.notes[indexPath.row])
-//    }
-
 }
 
 extension NotesMainViewController {
@@ -127,18 +94,19 @@ extension NotesMainViewController {
         }
     }
     
-    @objc func fetchCommits() {
+    @objc func saveAndReload() {
         
         self.saveContext()
         self.loadSavedData()
     }
     
     func loadSavedData() {
+    
         if fetchedResultsController == nil {
             let request = Note.createFetchRequest()
             let sort = NSSortDescriptor(key: "date", ascending: false)
             request.sortDescriptors = [sort]
-            request.fetchBatchSize = 20
+//            request.fetchBatchSize = 20
             
             fetchedResultsController = NSFetchedResultsController(fetchRequest: request, managedObjectContext: container.viewContext, sectionNameKeyPath: nil, cacheName: nil)
             fetchedResultsController.delegate = self
@@ -169,9 +137,11 @@ extension NotesMainViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "notesCell", for: indexPath) as! NotesCell
         
         let note = fetchedResultsController.object(at: indexPath)
+        
+        // refactor here 
         cell.cellView.titleView.text = note.body
         cell.cellView.dateView.text = note.dateString
-        cell.cellView.bodyView.text = note.body.truncateBody()
+        cell.cellView.bodyView.text = note.body.truncateBody
         
         return cell
     }
@@ -195,6 +165,7 @@ extension NotesMainViewController {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         switch type {
         case .delete:
+            guard blankNoteActive == false else {return}
             tableView.deleteRows(at: [indexPath!], with: .automatic)
             
         default:
@@ -204,26 +175,3 @@ extension NotesMainViewController {
     
 }
 
-extension String {
-    
-    // for use in note cell
-    func truncateTitle() -> String{
-        return String(self.prefix(30))
-    }
-    
-    func truncateBody() -> String {
-
-        // if new line exists truncate body after first new line
-        guard self.rangeOfCharacter(from: CharacterSet.newlines) == nil else {
-            return self.components(separatedBy: "\n")[1]
-        }
-        
-        // else truncate after first 30 characters
-        guard self.count > 30 else {return ""}
-        // find first space after taking suffix after thirty characters
-        let firstSpaceAfterSuffix = self.suffix(self.count - 30).split(separator: " " )[0]
-        // split components based on first occurence of word after first space found
-        return self.components(separatedBy: firstSpaceAfterSuffix)[1]
-    }
-    
-}

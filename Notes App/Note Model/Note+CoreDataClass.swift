@@ -14,13 +14,7 @@ import CoreData
 public class Note: NSManagedObject {
 
         lazy var dateString: String = {
-            return convertDate(date: date)
+            return date.configureDateString
         }()
-    
-        private func convertDate(date: Date) -> String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM.dd.yy"
-            return formatter.string(from: date)
-        }
     
 }
