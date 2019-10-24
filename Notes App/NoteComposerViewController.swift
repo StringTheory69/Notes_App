@@ -11,10 +11,23 @@ import UIKit
 class NoteComposerViewController: UIViewController, UITextViewDelegate {
     
     var note: Note!
+    // should this be weak
+    weak var delegate: NotesMainViewController!
+    
+    var date: Date!
+    
     lazy var bottomConstraint: NSLayoutConstraint = {
         let bottomConstraint = noteComposerView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
         return bottomConstraint
     }()
+    
+    lazy var circleButton: CircleButton = {
+        let circleButton = CircleButton()
+        circleButton.addTarget(self, action: #selector(deleteAction), for: .touchUpInside)
+        circleButton.translatesAutoresizingMaskIntoConstraints = false
+        return circleButton
+    }()
+
 
     lazy var noteComposerView : NoteComposerView = {
         let noteComposerView = NoteComposerView()
@@ -23,14 +36,15 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
         return noteComposerView
     }()
     
-    init(note:Note) {
-        super.init(nibName: nil, bundle: nil)
-        self.note = note
-    }
+//    init(note:Note, delegate: NotesMainViewController) {
+//        super.init(nibName: nil, bundle: nil)
+//        self.delegate = delegate
+//        self.note = note
+//    }
     
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-    }
+//    required init?(coder aDecoder: NSCoder) {
+//        super.init(coder: aDecoder)
+//    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -45,14 +59,39 @@ class NoteComposerViewController: UIViewController, UITextViewDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         
         noteComposerView.text = self.note.body
+//        self.date = Date()
         navigationItem.title = self.note.dateString
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(hideKeyboard))
+        view.addSubview(circleButton)
         setupLayout()
+    }
+    
+    @objc func deleteAction() {
+
+        CATransaction.begin()
+
+        navigationController?.popViewController(animated: true)
+        CATransaction.setCompletionBlock({ [weak self] in
+            
+            // TODO Deal with force unwrap
+            self?.delegate.deleteAction(self!.note)
+        })
+        CATransaction.commit()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        note.body = noteComposerView.text
+        delegate.saveContext()
+        delegate.loadSavedData()
+        print(" here save")
     }
     
     private func setupLayout() {
         
         NSLayoutConstraint.activate([
+            circleButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 10),
+            circleButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10),
             noteComposerView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             noteComposerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             noteComposerView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
