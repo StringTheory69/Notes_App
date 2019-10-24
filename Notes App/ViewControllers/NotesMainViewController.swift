@@ -11,29 +11,23 @@ import CoreData
 
 class NotesMainViewController: UITableViewController, NSFetchedResultsControllerDelegate {
     
+    // storage
     var fetchedResultsController: NSFetchedResultsController<Note>!
     var container: NSPersistentContainer!
     var predicate: NSPredicate?
     
-    var blankNoteActive = false
-    
+    // UI
     lazy var heading: HeadingLabel = HeadingLabel()
     
-    lazy var circleButton: CircleButton = {
-        let circleButton = CircleButton()
-        circleButton.addTarget(self, action: #selector(presentBlankNote), for: .touchUpInside)
-        circleButton.translatesAutoresizingMaskIntoConstraints = false
-        return circleButton
+    lazy var addBlankNoteButton: CircleButton = {
+        let addBlankNoteButton = CircleButton()
+        addBlankNoteButton.addTarget(self, action: #selector(presentBlankNote), for: .touchUpInside)
+        return addBlankNoteButton
     }()
     
-    @objc func presentBlankNote() {
-
-        let note = Note(context: self.container.viewContext)
-        note.date = Date()
-        note.body = ""
-        blankNoteActive = true
-        presentNotesComposer(note)
-    }
+    // logic
+    // edge case: blankNoteActive to bipass the traditional tableview delete action when a blank note is created but nothing is added to it
+    var blankNoteActive = false
  
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,9 +46,12 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
 
         setupView()
     }
+}
     
+// setup
+extension NotesMainViewController {
     
-    private func setupView() {
+    fileprivate func setupView() {
         
         view.backgroundColor = UIColor.notesBackground
         tableView.separatorStyle = .none
@@ -63,16 +60,31 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
         tableView.contentInset = UIEdgeInsets(top: 15, left: 0, bottom: 0, right: 0)
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: heading)
         
-        view.addSubview(circleButton)
+        view.addSubview(addBlankNoteButton)
         setupLayout()
     }
     
-    private func setupLayout() {
-        circleButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 10).isActive = true
-        circleButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10).isActive = true
+    fileprivate func setupLayout() {
+        addBlankNoteButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 10).isActive = true
+        addBlankNoteButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -10).isActive = true
+    }
+}
+
+// NoteComposerViewController presentation
+extension NotesMainViewController {
+    
+    @objc fileprivate func presentBlankNote() {
+        
+        // create blank note
+        let note = Note(context: self.container.viewContext)
+        note.date = Date()
+        note.body = ""
+        
+        blankNoteActive = true
+        presentNotesComposer(note)
     }
     
-    func presentNotesComposer(_ note: Note) {
+    fileprivate func presentNotesComposer(_ note: Note) {
         let vc = NoteComposerViewController()
         vc.delegate = self
         vc.note = note
@@ -81,9 +93,10 @@ class NotesMainViewController: UITableViewController, NSFetchedResultsController
     
 }
 
+// storage handling
 extension NotesMainViewController {
     
-    //  save changes to disk - if there are any changes - only if hasChanges
+    //  save changes to disk - if there are any changes
     func saveContext() {
         if container.viewContext.hasChanges {
             do {
@@ -94,19 +107,13 @@ extension NotesMainViewController {
         }
     }
     
-    @objc func saveAndReload() {
-        
-        self.saveContext()
-        self.loadSavedData()
-    }
-    
     func loadSavedData() {
     
         if fetchedResultsController == nil {
             let request = Note.createFetchRequest()
             let sort = NSSortDescriptor(key: "date", ascending: false)
             request.sortDescriptors = [sort]
-//            request.fetchBatchSize = 20
+            request.fetchBatchSize = 20
             
             fetchedResultsController = NSFetchedResultsController(fetchRequest: request, managedObjectContext: container.viewContext, sectionNameKeyPath: nil, cacheName: nil)
             fetchedResultsController.delegate = self
@@ -116,13 +123,22 @@ extension NotesMainViewController {
         
         do {
             try fetchedResultsController.performFetch()
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
+            DispatchQueue.main.async { [weak self] in
+                self?.tableView.reloadData()
             }
         } catch {
             print("Fetch failed")
         }
     }
+    
+    @objc func deleteAction(_ note: Note) {
+        container.viewContext.delete(note)
+        saveContext()
+    }
+}
+
+// tableview datasource and delete action
+extension NotesMainViewController {
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return fetchedResultsController.sections?.count ?? 0
@@ -137,12 +153,7 @@ extension NotesMainViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "notesCell", for: indexPath) as! NotesCell
         
         let note = fetchedResultsController.object(at: indexPath)
-        
-        // refactor here 
-        cell.cellView.titleView.text = note.body
-        cell.cellView.dateView.text = note.dateString
-        cell.cellView.bodyView.text = note.body.truncateBody
-        
+        cell.note = note
         return cell
     }
     
@@ -155,11 +166,6 @@ extension NotesMainViewController {
             let note = fetchedResultsController.object(at: indexPath)
             deleteAction(note)
         }
-    }
-        
-    @objc func deleteAction(_ note: Note) {
-        container.viewContext.delete(note)
-        saveContext()
     }
     
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {

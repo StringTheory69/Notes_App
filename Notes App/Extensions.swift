@@ -6,7 +6,7 @@
 //  Copyright © 2019 jacob. All rights reserved.
 //
 
-import Foundation
+import UIKit
 
 extension Date {
     /// Returns a string with a formatting of date dependent on distance from now
@@ -28,7 +28,7 @@ extension Date {
         guard daysSinceNow < 1 else {return "Yesterday"}
         
         // if today display time of day
-        formatter.dateFormat = "HH:mm a"
+        formatter.dateFormat = "h:mm a"
         return formatter.string(from: self)
     }
 }

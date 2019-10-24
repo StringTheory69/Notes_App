@@ -8,22 +8,15 @@
 
 import UIKit
 
-class HeadingLabel: UILabel {
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        text = "Notes"
-        font = UIFont.heading
-        textColor = .white
-    }
-    
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-}
-
 class CircleButton: UIButton {
+    
+    var deleteMode: Bool = false {
+        willSet {
+            guard newValue == true else {return}
+            backgroundColor = UIColor.notesRed
+            setImage(#imageLiteral(resourceName: "x_icon"), for: .normal)
+        }
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)

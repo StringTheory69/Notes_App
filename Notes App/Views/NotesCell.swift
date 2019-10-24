@@ -10,6 +10,14 @@ import UIKit
 
 class NotesCell: UITableViewCell {
     
+    var note: Note! {
+        didSet {
+            cellView.titleView.text = note.body
+            cellView.dateView.text = note.dateString
+            cellView.bodyView.text = note.body.truncateBody
+        }
+    }
+    
     lazy var cellView: CellView = {
         let cellView = CellView()
         cellView.translatesAutoresizingMaskIntoConstraints = false
@@ -26,7 +34,7 @@ class NotesCell: UITableViewCell {
         setupView()
     }
     
-    private func setupView() {
+    fileprivate func setupView() {
         
         backgroundColor = .clear
         selectionStyle = .none
@@ -34,7 +42,7 @@ class NotesCell: UITableViewCell {
         setupLayout()
     }
     
-    private func setupLayout() {
+    fileprivate func setupLayout() {
        NSLayoutConstraint.activate([
         cellView.heightAnchor.constraint(equalToConstant: 110),
         cellView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -42,8 +50,7 @@ class NotesCell: UITableViewCell {
         cellView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -17)
         ])
     }
-    
-    
+
 }
 
 class CellView: UIView {
@@ -57,7 +64,6 @@ class CellView: UIView {
     lazy var titleView: UILabel = {
         let titleView = UILabel()
         titleView.translatesAutoresizingMaskIntoConstraints = false
-//        titleView.text = "This is the title This is the title This is the title"
         titleView.textColor = .white
         titleView.font = UIFont.cellHeading
         return titleView
@@ -66,7 +72,6 @@ class CellView: UIView {
     lazy var bodyView: UILabel = {
         let bodyView = UILabel()
         bodyView.translatesAutoresizingMaskIntoConstraints = false
-//        bodyView.text = "This is the body 00000000000 0000000 00000000 00000000000000000000 0000000000000 00000000000000000000000000000000000000000..."
         bodyView.textColor = .white
         bodyView.font = UIFont.cellBody
         bodyView.numberOfLines = 2
@@ -76,7 +81,6 @@ class CellView: UIView {
     lazy var dateView: UILabel = {
         let dateView = UILabel()
         dateView.translatesAutoresizingMaskIntoConstraints = false
-//        dateView.text = "02.10.19"
         dateView.textColor = .white
         dateView.font = UIFont.cellDate
         dateView.textAlignment = .right
@@ -93,7 +97,7 @@ class CellView: UIView {
         setupView()
     }
     
-    private func setupView() {
+    fileprivate func setupView() {
         backgroundColor = UIColor.notesCellBackground
         addSubview(paddedView)
         addSubview(titleView)
@@ -110,7 +114,7 @@ class CellView: UIView {
         layer.borderWidth = 0.25
     }
     
-    private func setupLayout() {
+    fileprivate func setupLayout() {
         NSLayoutConstraint.activate([
             paddedView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: 20),
             paddedView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 17),
