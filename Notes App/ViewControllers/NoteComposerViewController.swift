@@ -47,6 +47,7 @@ extension NoteComposerViewController {
         view.backgroundColor = UIColor.notesBackground
         view.addSubview(noteComposerTextView)
         
+        NotificationCenter.default.addObserver(self, selector: #selector(applicationWillTerminate), name: UIApplication.willTerminateNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         
@@ -149,6 +150,10 @@ extension NoteComposerViewController {
     @objc fileprivate func keyboardWillHide(notification: Notification) {
         hideDoneButton(true)
         animateBottomConstraint(0)
+    }
+    
+    @objc fileprivate func applicationWillTerminate() {
+        handleDisappear()
     }
 
 }
